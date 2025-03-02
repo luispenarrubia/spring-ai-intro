@@ -6,6 +6,9 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
 
+import guru.springframework.springaiintro.models.Answer;
+import guru.springframework.springaiintro.models.Question;
+
 @Service
 public class OpenAIServiceImpl implements OpenAIService {
     
@@ -23,6 +26,11 @@ public class OpenAIServiceImpl implements OpenAIService {
         ChatResponse response = chatModel.call(prompt);
         
         return response.getResult().getOutput().getContent();
+    }
+
+    @Override
+    public Answer getAnswer(Question question) {
+        return new Answer(getAnswer(question.question()));
     }
 
 }
