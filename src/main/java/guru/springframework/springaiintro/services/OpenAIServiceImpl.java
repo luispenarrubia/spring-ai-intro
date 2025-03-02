@@ -6,13 +6,21 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import guru.springframework.springaiintro.models.Answer;
 import guru.springframework.springaiintro.models.Question;
 import guru.springframework.springaiintro.models.CapitalRequest;
+import guru.springframework.springaiintro.models.CapitalResponse;
 
 @Service
 public class OpenAIServiceImpl implements OpenAIService {
@@ -24,6 +32,12 @@ public class OpenAIServiceImpl implements OpenAIService {
 
     @Value("classpath:templates/get-capital-info-promp.st")
     private Resource getCapitalInfoPrompt;
+
+    @Value("classpath:templates/get-capital-json-prompt.st")
+    private Resource getCapitalJsonPrompt;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     public OpenAIServiceImpl(ChatModel chatModel) {
         this.chatModel = chatModel;
@@ -62,6 +76,21 @@ public class OpenAIServiceImpl implements OpenAIService {
         ChatResponse response = chatModel.call(prompt);
 
         return new Answer(response.getResult().getOutput().getContent());
+    }
+
+    @Override
+    public CapitalResponse getCapitalJson(CapitalRequest capitalRequest) {
+        BeanOutputConverter<CapitalResponse> converter = new BeanOutputConverter<>(CapitalResponse.class);
+        String format = converter.getFormat();
+        System.out.println("Format: \n" + format);
+
+        PromptTemplate promptTemplate = new PromptTemplate(getCapitalJsonPrompt);
+        Prompt prompt = promptTemplate.create(Map.of("stateOrCountry", capitalRequest.stateOrCountry(), "format", format));
+
+        ChatResponse response = chatModel.call(prompt);
+        System.out.println("Response: \n" + response.getResult().getOutput().getContent());
+
+        return converter.convert(response.getResult().getOutput().getContent());
     }
 
 }
